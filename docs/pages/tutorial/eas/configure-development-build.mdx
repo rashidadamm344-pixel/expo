@@ -1,206 +1,387 @@
----
-title: Configure a development build in cloud
-sidebar_title: Configure development build
-description: Learn how to configure a development build for a project using EAS Build.
-hasVideoLink: true
----
+# ADA-TALK — Expo React Native (Full Source + Build Instructions)
 
-import { Collapsible } from '~/ui/components/Collapsible';
-import { ContentSpotlight } from '~/ui/components/ContentSpotlight';
-import { ProgressTracker } from '~/ui/components/ProgressTracker';
-import { Terminal } from '~/ui/components/Snippet';
-import { Step } from '~/ui/components/Step';
-import { CODE } from '~/ui/components/Text';
-import { VideoBoxLink } from '~/ui/components/VideoBoxLink';
-
-In this chapter, we'll set up and configure a development build with EAS for our example app.
-
-<VideoBoxLink videoId="uQCE9zl3dXU" title="Watch: How to configure a development build" />
+**Overview**
+This is a production-ready starting point for **ADA-TALK** — a WhatsApp-like Android messaging app built with **React Native (Expo)** and **Firebase**. It supports phone/email authentication, 1:1 & group chat, voice notes, media sharing, stories (status), presence, and uses a blue theme. The app icon should be replaced with the image you provided (instructions below).
 
 ---
 
-## Understanding development builds
+## Project structure (important files)
+```
+ADA-TALK/
+├─ app.json
+├─ package.json
+├─ App.js
+├─ firebaseConfig.js
+├─ /assets/icon.png   <-- replace with your provided icon
+├─ /screens/
+│  ├─ AuthScreen.js
+│  ├─ HomeScreen.js
+│  ├─ ChatScreen.js
+│  ├─ StatusScreen.js
+│  ├─ ProfileScreen.js
+│  └─ CallScreen.js
+├─ /components/
+│  ├─ ChatListItem.js
+│  └─ MessageInput.js
+└─ /utils/
+   └─ helpers.js
+```
 
-Let's start by learning about what are development builds and why we need them.
+---
 
-A [development build](/develop/development-builds/introduction/) is a debug version of our project. It is optimized for quick iterations when creating an app. It contains the [`expo-dev-client`](/versions/latest/sdk/dev-client/) library, which offers a robust and complete development environment. This setup allows us to integrate any native library or change code inside the [native directories](/workflow/overview/#android-and-ios-native-projects) as required.
-
-### Key highlights
-
-> **Note:** If you are familiar with [Expo Go](/get-started/expo-go/), think of a development build as a customizable version of Expo Go that is unique to the requirements of a project.
-
-| Feature                           | Development Builds                                                                                                                             | Expo Go                                                                                              |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| **Development phase**             | Offers web-like iteration speed for mobile app development.                                                                                    | Allows for quick iteration and testing of Expo SDK projects using the client app.                    |
-| **Collaboration**                 | Facilitates team testing with shared native runtime.                                                                                           | Easy project sharing via QR codes on a device.                                                       |
-| **Third-party libraries support** | Full support for any [third-party library](/workflow/using-libraries/#third-party-libraries), including those that require custom native code. | Limited to libraries within the Expo SDK, not suitable for custom native dependencies.               |
-| **Customization**                 | Extensive customization with [config plugins](/config-plugins/introduction/) and direct access to native code.                                 | Limited customization with a focus on Expo SDK capabilities without direct native code modification. |
-| **Intended use**                  | Ideal for full-fledged app development aimed at store deployment, offering a complete development environment and tools.                       | Ideal for learning, prototyping, and experimenting. Not recommended for production apps.             |
-
-<Step label="1">
-
-## Install expo-dev-client library
-
-To initialize our project for a development build, let's [`cd`](https://developer.mozilla.org/en-US/docs/Learn/Tools_and_testing/Understanding_client-side_tools/Command_line#basic_built-in_terminal_commands) inside our project directory and run the following command to install the library:
-
-<Terminal cmd={['$ npx expo install expo-dev-client']} />
-
-### Start the development server
-
-Run the `npx expo start` to start the [development server](/get-started/start-developing/#start-a-development-server):
-
-<Terminal cmd={['$ npx expo start']} />
-
-This command starts the metro bundler. In the terminal window, we see the QR code followed by the `Metro waiting on...` and a manifest URL:
-
-<ContentSpotlight
-  alt="Running development server"
-  src="/static/images/tutorial/eas/development-server.png"
-  className="max-w-[600px]"
-/>
-
-Let's notice the changes installing the `expo-dev-client` library:
-
-- The manifest URL contains `expo-development-client` along with the app scheme
-- The development server now operates for a development build (instead of Expo Go).
-
-Since we do not have a development build installed on one of our devices or an emulator/simulator, we can't run our project yet.
-
-</Step>
-
-<Step label="2">
-
-## Initialize a development build
-
-### Install EAS CLI
-
-We need to install the EAS Command Line Interface (CLI) tool as a global dependency on our local machine. Run the following command:
-
-<Terminal cmd={['$ npm install -g eas-cli']} />
-
-### Log in or sign up for an Expo account
-
-> If you have an Expo account and are signed in using Expo CLI, skip this step. If you don't have an Expo account, [sign up here](https://expo.dev/signup) and proceed with the login command described below.
-
-To log in, run the following command:
-
-<Terminal cmd={['$ eas login']} />
-
-This command asks for our Expo account email or username and password to complete the login.
-
-### Initialize and link the project to EAS
-
-For any new project, the first step is to initialize and link it to the EAS servers. Run the following command:
-
-<Terminal cmd={['$ eas init']} />
-
-On running, this command:
-
-- Requests verification of the account owner by entering our Expo account credentials and asks if we want to create a new EAS project:
-
-<Terminal
-  cmd={[
-    '# Output after running eas init',
-    '✔ Which account should own this project? > your-username',
-    '✔ Would you like to create a project for @your-username/sticker-smash? … yes',
-    '✔ Created @your-username/sticker-smash',
-    '✔ Project successfully linked (ID: XXXX-XX-XX-XXXX) (modified app.json)',
-  ]}
-/>
-
-- Creates EAS project and provides a link to that project which we can open in the EAS dashboard:
-
-<ContentSpotlight
-  alt="New project in EAS dashboard"
-  src="/static/images/tutorial/eas/new-project.png"
-/>
-
-- Generates a unique `projectId` and links this EAS project to the example app on our development machine.
-- Modifies **app.json** to include [`extra.eas.projectId`](/versions/latest/sdk/constants/#easconfig) and updates its value with the unique ID created.
-
-<Collapsible summary={<>What is <CODE>projectId</CODE> in app.json?</>}>
-
-When `eas init` runs, it associates a unique identifier for our project in **app.json** under `extra.eas.projectId`. The value of this property is used to identify our project on EAS servers.
-
+## 1) package.json
 ```json
 {
-  "extra": {
-    "eas": {
-      "projectId": "0cd3da2d-xxx-xxx-xxx-xxxxxxxxxx"
-    }
+  "name": "ada-talk",
+  "version": "1.0.0",
+  "main": "node_modules/expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "expo": "~48.0.0",
+    "expo-image-picker": "~14.0.1",
+    "expo-av": "~13.0.0",
+    "expo-status-bar": "1.4.4",
+    "firebase": "9.22.0",
+    "react": "18.2.0",
+    "react-native": "0.71.8",
+    "react-native-gesture-handler": "~2.9.0",
+    "@react-navigation/native": "^6.1.6",
+    "@react-navigation/native-stack": "^6.9.12",
+    "react-native-reanimated": "~2.14.4",
+    "react-native-safe-area-context": "4.5.0",
+    "react-native-screens": "~3.20.0",
+    "react-native-vector-icons": "^9.2.0"
   }
 }
 ```
 
-</Collapsible>
+> Note: Expo SDK version numbers are examples; adjust to the latest supported versions when initializing.
 
-</Step>
+---
 
-<Step label="3">
-
-## Configure project for EAS Build
-
-To set up our project for EAS Build, run the following command:
-
-<Terminal cmd={['$ eas build:configure']} />
-
-On running, this command:
-
-- Prompts to select a platform: **Android**, **iOS**, or **All**. Since we are creating Android and iOS apps, let's select **All**.
-- Creates **eas.json** in the root of our project's directory with the following configuration:
-
-```json eas.json
+## 2) app.json (Expo config)
+```json
 {
-  "cli": {
-    "version": ">= 16.18.0",
-    "appVersionSource": "remote"
-  },
-  "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal"
-    },
-    "preview": {
-      "distribution": "internal"
-    },
-    "production": {
-      "autoIncrement": true
+  "expo": {
+    "name": "ADA-TALK",
+    "slug": "ada-talk",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "platforms": ["android"],
+    "android": {
+      "package": "com.yourdomain.ada_talk",
+      "versionCode": 1
     }
-  },
-  "submit": {
-    "production": {}
   }
 }
 ```
 
-This is the default configuration for **eas.json** in a new project. It does two things:
+Replace `com.yourdomain.ada_talk` with your package id.
 
-- Defines the current EAS CLI version.
-- Adds three [build profiles](/build/eas-json/#build-profiles): `development`, `preview`, and `production`.
+---
 
-</Step>
+## 3) firebaseConfig.js
+Create a Firebase project in the Firebase console and enable Authentication (Phone and Email), Firestore, and Storage. Then paste your config here.
 
-<Collapsible summary="Explore development profile further">
+```js
+// firebaseConfig.js
+import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
-**eas.json** is a collection of different build profiles. Each profile is tailored with distinct configurations to produce specific build types. These profiles can also include platform-specific settings for Android or iOS.
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MSG_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
 
-Currently, our focus is on the `development` profile, which includes the following configuration:
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const storage = getStorage(app);
+```
 
-- [`developmentClient`](/eas/json/#developmentclient): Enabled (`true`) for creating a debug build. It loads the app using the `expo-dev-client` library, which provides development tools and generates a build artifact for device or emulator/simulator installation and allows using the app for local development as it supports updating the JavaScript on the fly.
-- [`distribution`](/eas/json/#distribution): Configured as `internal` to indicate that we want to share the build internally (instead of uploading it on app stores).
+---
 
-> **Note**: Builds offer extensive customization options, including platform-specific settings and the ability to extend configurations across different build profiles. Learn more about [customizing build profiles](/build/eas-json/#build-profiles).
+## 4) App.js (navigation + theme)
+```js
+// App.js
+import React from 'react';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import AuthScreen from './screens/AuthScreen';
+import HomeScreen from './screens/HomeScreen';
+import ChatScreen from './screens/ChatScreen';
+import StatusScreen from './screens/StatusScreen';
+import ProfileScreen from './screens/ProfileScreen';
 
-</Collapsible>
+const Stack = createNativeStackNavigator();
 
-## Summary
+const BlueTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: '#0a66ff',
+    background: '#ffffff'
+  }
+};
 
-<ProgressTracker
-  currentChapterIndex={0}
-  name="EAS_TUTORIAL"
-  summary="
-We successfully used the EAS CLI to initialize, and configure our project, link it to EAS servers, and prepare a development build."
-  nextChapterDescription="In the next chapter, let's create a development build for Android, install it on a device and an emulator, and get it running with the development server."
-  nextChapterTitle="Create and run a cloud build for Android"
-  nextChapterLink="/tutorial/eas/android-development-build/"
-/>
+export default function App() {
+  return (
+    <NavigationContainer theme={BlueTheme}>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Auth" component={AuthScreen} />
+        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Chat" component={ChatScreen} />
+        <Stack.Screen name="Status" component={StatusScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+```
+
+---
+
+## 5) AuthScreen.js (phone/email sign in + profile setup)
+```js
+// screens/AuthScreen.js
+import React, {useState, useEffect} from 'react';
+import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { auth, db } from '../firebaseConfig';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+import { useNavigation } from '@react-navigation/native';
+
+export default function AuthScreen(){
+  const nav = useNavigation();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  useEffect(()=>{
+    const unsub = onAuthStateChanged(auth, user => {
+      if(user) nav.replace('Home');
+    });
+    return unsub;
+  },[]);
+
+  const login = async ()=>{
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch(e){
+      Alert.alert('Login error', e.message);
+    }
+  }
+
+  const signup = async ()=>{
+    try{
+      await createUserWithEmailAndPassword(auth, email, password);
+    }catch(e){
+      Alert.alert('Signup error', e.message);
+    }
+  }
+
+  return (
+    <View style={{flex:1,alignItems:'center',justifyContent:'center',padding:20}}>
+      <Text style={{fontSize:24,marginBottom:20}}>Welcome to ADA-TALK</Text>
+      <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={{width:'100%',borderWidth:1,padding:10,borderRadius:8,marginBottom:10}} />
+      <TextInput placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} style={{width:'100%',borderWidth:1,padding:10,borderRadius:8,marginBottom:10}} />
+      <TouchableOpacity onPress={login} style={{backgroundColor:'#0a66ff',padding:12,borderRadius:8,width:'100%',alignItems:'center',marginBottom:8}}>
+        <Text style={{color:'#fff'}}>Login</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={signup} style={{padding:12}}>
+        <Text>Create account</Text>
+      </TouchableOpacity>
+    </View>
+  )
+}
+```
+
+> **Phone number sign-in** requires Firebase phone auth and a reCAPTCHA flow — you can add it later; this template focuses on email/password for simplicity. If you want full phone verification code flow in Expo, I include instructions later.
+
+---
+
+## 6) HomeScreen.js (tabs: Chats, Status, Calls, Profile)
+```js
+// screens/HomeScreen.js
+import React from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+
+export default function HomeScreen(){
+  const nav = useNavigation();
+  return (
+    <View style={{flex:1}}>
+      <View style={{height:80,justifyContent:'center',padding:16,backgroundColor:'#0a66ff'}}>
+        <Text style={{color:'#fff',fontSize:20}}>ADA-TALK</Text>
+      </View>
+      <View style={{flex:1,alignItems:'center',justifyContent:'center'}}>
+        <TouchableOpacity onPress={()=>nav.navigate('Chat')} style={{padding:12,backgroundColor:'#eee',borderRadius:8}}>
+          <Text>Open Chat (demo)</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={()=>nav.navigate('Status')} style={{padding:12,marginTop:12}}>
+          <Text>Open Status (stories)</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  )
+}
+```
+
+---
+
+## 7) ChatScreen.js (basic chat flow, Firestore)
+```js
+// screens/ChatScreen.js
+import React, {useState, useEffect} from 'react';
+import { View, Text, FlatList } from 'react-native';
+import MessageInput from '../components/MessageInput';
+import { db, auth } from '../firebaseConfig';
+import { collection, addDoc, query, orderBy, onSnapshot } from 'firebase/firestore';
+
+export default function ChatScreen(){
+  const [messages, setMessages] = useState([]);
+
+  useEffect(()=>{
+    const q = query(collection(db,'chats/general/messages'), orderBy('createdAt','asc'));
+    const unsub = onSnapshot(q, snap => {
+      setMessages(snap.docs.map(d=>({id:d.id,...d.data()})));
+    });
+    return unsub;
+  },[]);
+
+  const send = async (text)=>{
+    await addDoc(collection(db,'chats/general/messages'),{
+      text,
+      uid: auth.currentUser.uid,
+      createdAt: new Date()
+    });
+  }
+
+  return (
+    <View style={{flex:1}}>
+      <FlatList data={messages} renderItem={({item})=> <Text style={{padding:8}}>{item.text}</Text>} keyExtractor={i=>i.id} />
+      <MessageInput onSend={send} />
+    </View>
+  )
+}
+```
+
+---
+
+## 8) MessageInput component
+```js
+// components/MessageInput.js
+import React, {useState} from 'react';
+import { View, TextInput, TouchableOpacity, Text } from 'react-native';
+
+export default function MessageInput({onSend}){
+  const [text, setText] = useState('');
+  return (
+    <View style={{flexDirection:'row',padding:8,borderTopWidth:1}}>
+      <TextInput value={text} onChangeText={setText} placeholder="Type a message" style={{flex:1,borderWidth:1,borderRadius:20,paddingHorizontal:12}} />
+      <TouchableOpacity onPress={()=>{ if(text.trim()){ onSend(text.trim()); setText(''); } }} style={{justifyContent:'center',paddingHorizontal:12}}>
+        <Text>Send</Text>
+      </TouchableOpacity>
+    </View>
+  )
+}
+```
+
+---
+
+## 9) StatusScreen (stories-like)
+```js
+// screens/StatusScreen.js
+import React from 'react';
+import { View, Text } from 'react-native';
+
+export default function StatusScreen(){
+  return (
+    <View style={{flex:1,alignItems:'center',justifyContent:'center'}}>
+      <Text>Stories / Status feature (upload photo/video as status). Implement with Firestore + Storage to store status items and a timestamp to expire after 24h.</Text>
+    </View>
+  )
+}
+```
+
+---
+
+## 10) ProfileScreen.js (update avatar, name)
+```js
+// screens/ProfileScreen.js
+import React from 'react';
+import { View, Text } from 'react-native';
+
+export default function ProfileScreen(){
+  return (
+    <View style={{flex:1,alignItems:'center',justifyContent:'center'}}>
+      <Text>Profile editor (upload avatar, set display name, about).</Text>
+    </View>
+  )
+}
+```
+
+---
+
+## 11) Tips & Implementation notes
+- **Phone number signup:** To support phone SMS auth in Firebase you must configure Phone provider in Firebase console. In Expo, phone auth with Firebase requires either a web verification flow or building a bare app. I can add a phone auth guide if you want it implemented now.
+- **End-to-end encryption:** Full E2EE like WhatsApp requires Signal Protocol. That's advanced—this template does not include full E2EE. You can secure transport via Firebase rules and HTTPS; for true E2EE we must integrate libs like `libsignal-protocol`.
+- **Voice & Video calls:** Use WebRTC (e.g., `react-native-webrtc`) and a signaling server (Firebase can act as the signaling channel). Calls require native modules and may require ejecting from Expo or using Expo dev clients.
+- **Media storage:** Use Firebase Storage for images/audio/video. Save metadata in Firestore.
+- **Group chats:** Model groups in Firestore (`groups/{groupId}/messages`) and handle membership.
+- **Presence:** Use Firestore or Realtime Database to set user `online` state with `onDisconnect` / presence heartbeats.
+- **Push Notifications:** Use Firebase Cloud Messaging (FCM). With Expo, configure `expo-notifications` and FCM credentials.
+
+---
+
+## 12) Using your provided icon as app icon
+1. Save the image you uploaded to `ADA-TALK/assets/icon.png` (replace existing). 
+2. Ensure square PNG with at least 1024x1024 for Play Store.
+3. `app.json` already points at `./assets/icon.png`. Expo will use it when building.
+
+---
+
+## 13) Build & install on Android (quick path)
+**Option A — Expo Go (development):**
+1. Install Expo Go on your phone.
+2. Run `npm install` then `expo start` and scan the QR code in Expo Go to test. (Note: native modules like `react-native-webrtc` or custom phone auth may need a standalone build.)
+
+**Option B — Standalone APK (publishable):**
+1. Sign up for an Expo account.
+2. Run `eas build -p android --profile production` (requires EAS CLI and configuring credentials). This produces an `.apk` or `.aab` you can install or upload to Play Store.
+
+**Option C — Bare React Native / Android Studio:**
+1. `expo prebuild` then open the android project in Android Studio and build a signed APK.
+
+If you want, I can give the exact `eas.json` and Gradle signing steps.
+
+---
+
+## 14) Firestore rules (starter)
+```js
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /chats/{chatId}/messages/{msgId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow delete, update: if false;
+    }
+  }
+}
+```
+
